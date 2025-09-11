@@ -228,6 +228,7 @@ bot.onText(/\/help/, async (msg) => {
   • Type keywords (like \`war\`) to search files
   • /myaccount → check your usage
   • /recent → view new uploads
+  • /favorites → view saved files
   • /trending → view popular files`;
 
     await bot.sendMessage(chatId, text, {
@@ -324,11 +325,25 @@ bot.on('message', async (msg) => {
 
         // file detection
         const fileInfo = (() => {
-            if (msg.document) return { type: 'document', file_id: msg.document.file_id, file_name: msg.document.file_name || 'document' };
-            if (msg.photo) { const p = msg.photo[msg.photo.length - 1]; return { type: 'photo', file_id: p.file_id, file_name: 'photo' }; }
-            if (msg.video) return { type: 'video', file_id: msg.video.file_id, file_name: msg.video.file_name || 'video' };
-            if (msg.audio) return { type: 'audio', file_id: msg.audio.file_id, file_name: msg.audio.file_name || 'audio' };
-            if (msg.voice) return { type: 'voice', file_id: msg.voice.file_id, file_name: 'voice' };
+            const captionName = msg.caption?.split(/\s+/)[0] || null; // first word in caption as fallback name
+
+            if (msg.document)
+                return { type: 'document', file_id: msg.document.file_id, file_name: msg.document.file_name || captionName || 'document' };
+
+            if (msg.photo) {
+                const p = msg.photo[msg.photo.length - 1];
+                return { type: 'photo', file_id: p.file_id, file_name: captionName || 'photo' };
+            }
+
+            if (msg.video)
+                return { type: 'video', file_id: msg.video.file_id, file_name: msg.video.file_name || captionName || 'video' };
+
+            if (msg.audio)
+                return { type: 'audio', file_id: msg.audio.file_id, file_name: msg.audio.file_name || captionName || 'audio' };
+
+            if (msg.voice)
+                return { type: 'voice', file_id: msg.voice.file_id, file_name: captionName || 'voice' };
+
             return null;
         })();
 
