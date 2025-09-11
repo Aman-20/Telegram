@@ -709,11 +709,6 @@ bot.on('inline_query', async (iq) => {
       description: f.keywords.join(', ').slice(0, 100),
       input_message_content: {
         message_text: `📁 ${f.file_name}\nID: ${f.customId}`
-      },
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📥 Get this file', switch_inline_query_current_chat: f.customId }]
-        ]
       }
     }));
 
