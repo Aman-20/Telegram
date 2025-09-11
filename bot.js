@@ -13,8 +13,14 @@ const {
   RENDER_EXTERNAL_URL
 } = process.env;
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
-//bot.setWebHook(`${RENDER_EXTERNAL_URL}/bot${TELEGRAM_TOKEN}`);
+const {
+  TELEGRAM_TOKEN,
+  MONGODB_URI,
+  ADMIN_IDS = '',
+  DAILY_LIMIT = '10',
+  RESULTS_PER_PAGE = '6'
+} = process.env;
+
 
 const app = express();
 app.use(express.json());
@@ -33,13 +39,8 @@ app.listen(PORT, () => {
 });
 
 
-const {
-    TELEGRAM_TOKEN,
-    MONGODB_URI,
-    ADMIN_IDS = '',
-    DAILY_LIMIT = '10',
-    RESULTS_PER_PAGE = '6'
-} = process.env;
+const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
+bot.setWebHook(`${RENDER_EXTERNAL_URL}/bot${TELEGRAM_TOKEN}`);
 
 if (!TELEGRAM_TOKEN || !MONGODB_URI) {
     console.error('Missing TELEGRAM_TOKEN or MONGODB_URI in .env');
