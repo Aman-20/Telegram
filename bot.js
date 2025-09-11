@@ -30,9 +30,17 @@ app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
   res.sendStatus(200);
 });
 
+app.set('view engine', 'ejs');
+
 app.get('/', (req, res) => {
-  res.send('Bot is running!');
+  res.render('index', {
+    botName: 'File Sharing Bot',
+    botUsername: 'File_sharing_hd_bot',  
+    supportChannel: 'dnafork_support',
+    description: 'This Telegram bot lets you search, download, and manage Movies with daily limits, favorites, trending content, and more.'
+  });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -708,7 +716,7 @@ bot.on('inline_query', async (iq) => {
       title: f.file_name,
       description: f.keywords.join(', ').slice(0, 100),
       input_message_content: {
-        message_text: `📁 ${f.file_name}\nID: ${f.customId}`
+        message_text: f.customId
       }
     }));
 
