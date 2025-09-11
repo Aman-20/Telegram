@@ -6,6 +6,33 @@ import TelegramBot from 'node-telegram-bot-api';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
+import express from 'express';
+
+const {
+  PORT = 3000,
+  RENDER_EXTERNAL_URL
+} = process.env;
+
+const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
+//bot.setWebHook(`${RENDER_EXTERNAL_URL}/bot${TELEGRAM_TOKEN}`);
+
+const app = express();
+app.use(express.json());
+
+app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
+
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+
 const {
     TELEGRAM_TOKEN,
     MONGODB_URI,
@@ -156,7 +183,6 @@ function getUserSearchResults(userId) {
    Telegram bot (polling)
    ------------------------- */
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 console.log('Bot started (polling mode)');
 
 /* Set menu commands */
