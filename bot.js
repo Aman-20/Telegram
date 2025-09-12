@@ -35,7 +35,7 @@ app.set('view engine', 'ejs');
 app.get('/', (req, res) => {
   res.render('index', {
     botName: 'File Sharing Bot',
-    botUsername: 'File_sharing_hd_bot',  
+    botUsername: 'File_sharing_hd_bot',
     supportChannel: 'dnafork_support',
     description: 'This Telegram bot lets you search, download, and manage Movies with daily limits, favorites, trending content, and more.'
   });
@@ -326,7 +326,11 @@ bot.onText(/\/myaccount/, async (msg) => {
   try {
     const doc = await Limit.findOne({ userId, date: today }).lean().exec();
     const used = doc?.count || 0;
-    const remaining = DAILY_LIMIT_NUM - used;
+
+    // Ensure used can't go above the limit
+    if (used > DAILY_LIMIT_NUM) used = DAILY_LIMIT_NUM;
+
+    const remaining = Math.max(DAILY_LIMIT_NUM - used, 0);
 
     const text = `
   👤 *Your Account*
@@ -623,6 +627,36 @@ bot.on('callback_query', async (q) => {
 
     if (data.startsWith('GET:')) {
       const customId = data.split(':')[1];
+      const userId = q.from.id;
+
+      // ⛔ Check if user joined the channel
+      try {
+        const member = await bot.getChatMember(process.env.REQUIRED_CHANNEL, userId);
+        if (
+          member.status !== 'member' &&
+          member.status !== 'administrator' &&
+          member.status !== 'creator'
+        ) {
+          await bot.answerCallbackQuery(q.id, { text: 'Join the channel first!' });
+          await bot.sendMessage(q.message.chat.id,
+            `📢 Please join our channel to download files:\n\n👉 ${process.env.REQUIRED_CHANNEL}`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: "✅ I've Joined", callback_data: `GET:${customId}` }]
+                ]
+              }
+            }
+          );
+          return; // stop here
+        }
+      } catch (err) {
+        console.error('getChatMember error', err.message);
+        await bot.sendMessage(q.message.chat.id, '⚠️ Could not verify channel membership. Try again later.');
+        return;
+      }
+
+      // ✅ if user is a member, continue sending file as before
       const fileDoc = await File.findOne({ customId }).lean().exec();
       if (!fileDoc) {
         await bot.answerCallbackQuery(q.id, { text: 'File not found.' });
@@ -640,24 +674,45 @@ bot.on('callback_query', async (q) => {
       // increment download counter
       await File.updateOne({ _id: fileDoc._id }, { $inc: { downloads: 1 } }).exec();
 
-      // send file with caption
       try {
         await bot.answerCallbackQuery(q.id, { text: 'Sending file...' });
-        if (fileDoc.type === 'document') await bot.sendDocument(q.message.chat.id, fileDoc.file_id, { caption: `${fileDoc.file_name}\nID: ${fileDoc.customId}` });
-        else if (fileDoc.type === 'video') await bot.sendVideo(q.message.chat.id, fileDoc.file_id, { caption: `${fileDoc.file_name}\nID: ${fileDoc.customId}` });
-        else if (fileDoc.type === 'audio') await bot.sendAudio(q.message.chat.id, fileDoc.file_id, { caption: `${fileDoc.file_name}\nID: ${fileDoc.customId}` });
-        else if (fileDoc.type === 'photo') await bot.sendPhoto(q.message.chat.id, fileDoc.file_id, { caption: `${fileDoc.file_name}\nID: ${fileDoc.customId}` });
-        else await bot.sendMessage(q.message.chat.id, `File: ${fileDoc.file_name}\nID: ${fileDoc.customId}`);
-        // include favorite button after sending
+
+        // ⬇️ send the actual file and capture the sent message
+        let sent;
+        const caption = `${fileDoc.file_name}\nID: ${fileDoc.customId}\n\n⚠️ This file will be deleted in 24 hours.`;
+        if (fileDoc.type === 'document')
+          sent = await bot.sendDocument(q.message.chat.id, fileDoc.file_id, { caption });
+        else if (fileDoc.type === 'video')
+          sent = await bot.sendVideo(q.message.chat.id, fileDoc.file_id, { caption });
+        else if (fileDoc.type === 'audio')
+          sent = await bot.sendAudio(q.message.chat.id, fileDoc.file_id, { caption });
+        else if (fileDoc.type === 'photo')
+          sent = await bot.sendPhoto(q.message.chat.id, fileDoc.file_id, { caption });
+        else
+          sent = await bot.sendMessage(q.message.chat.id, `File: ${fileDoc.file_name}\nID: ${fileDoc.customId}`);
+
+        // ⭐ Favorite button
         await bot.sendMessage(q.message.chat.id, `⭐ Save to favorites?`, {
           reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
         });
+
+        // ⏳ schedule deletion after 24 hours
+        setTimeout(async () => {
+          try {
+            await bot.deleteMessage(q.message.chat.id, sent.message_id);
+            console.log(`🗑 Deleted message ${sent.message_id} from chat ${q.message.chat.id}`);
+          } catch (err) {
+            console.error('Failed to delete file message:', err.message);
+          }
+        }, 24 * 60 * 60 * 1000); // 24 hours
+
       } catch (err) {
         console.error('send file error', err);
         await bot.sendMessage(q.message.chat.id, 'Failed to send file. It might be invalid on Telegram.');
       }
       return;
     }
+
 
     // Favorite toggle
     if (data.startsWith('FAV:')) {
