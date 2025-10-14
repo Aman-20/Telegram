@@ -679,7 +679,7 @@ bot.on('callback_query', async (q) => {
 
         // ⬇️ send the actual file and capture the sent message
         let sent;
-        const caption = `${fileDoc.file_name}\nID: ${fileDoc.customId}\n\n⚠️ This file will be deleted in 24 hours.`;
+        const caption = `${fileDoc.file_name}\nID: ${fileDoc.customId}\n\n⚠️ This file will be deleted in 1 Minute.`;
         if (fileDoc.type === 'document')
           sent = await bot.sendDocument(q.message.chat.id, fileDoc.file_id, { caption });
         else if (fileDoc.type === 'video')
@@ -704,7 +704,7 @@ bot.on('callback_query', async (q) => {
           } catch (err) {
             console.error('Failed to delete file message:', err.message);
           }
-        }, 24 * 60 * 60 * 1000); // 24 hours
+        }, 1 * 60 * 1000); // 1 Minute
 
       } catch (err) {
         console.error('send file error', err);
