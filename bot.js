@@ -230,10 +230,10 @@ bot.onText(/\/start/, async (msg) => {
   const name = msg.from?.first_name || 'there';
   const startText = `👋 Hi *${name}*!
 
-📁 *Welcome to the Movie Library Bot*
+📁 *Welcome to the File Sharing Bot*
 
-You can search and download files by simply typing keywords.
-Admins can upload new files with keywords in the caption and confirm to save them.
+📌 You can search and download files by simply typing keywords.
+The sent file will be automatically deleted after 1 minute.
 
 ━━━━━━━━━━━━━━━
 🧑‍💻 *User Commands*:
@@ -247,12 +247,11 @@ Admins can upload new files with keywords in the caption and confirm to save the
 
 ━━━━━━━━━━━━━━━
 🛡 *Admin Commands*:
-/delete <FileID> — Delete a file by its short ID
-/update <FileID> <kw1,kw2,...> — Update keywords for a file
-/stats — View total files, top downloads, top keywords
-/broadcast <message> — Send message to all users
+/delete FileID — Delete a file by its short ID
+/update FileID kw1,kw2,... — Update keywords for a file
+/stats — View top downloads
+/broadcast message — Send message to all users
 
-📌 After sending a file, the bot will ask you to *Confirm or Cancel* upload.
 ━━━━━━━━━━━━━━━`;
 
 
@@ -643,9 +642,11 @@ bot.on('callback_query', async (q) => {
         { text: `${f.file_name} (${f.customId})`, callback_data: `GET:${f.customId}` }
       ]);
 
-      await bot.sendMessage(chatId, `🔍 Results for "${keyword}":`, {
+      const listMsg = await bot.sendMessage(chatId, `🔍 Results for "${keyword}":`, {
         reply_markup: { inline_keyboard: keyboard }
       });
+
+      autoDeleteMessage(bot, chatId, listMsg.message_id);
 
       return;
     }
