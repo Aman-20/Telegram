@@ -126,6 +126,21 @@ const Pending = mongoose.model('Pending', PendingSchema);
    Utility helpers
    ------------------------- */
 
+function autoDeleteMessage(bot, chatId, messageId, delayMs = 60000) {
+  setTimeout(async () => {
+    try {
+      await bot.deleteMessage(chatId, messageId);
+      console.log(`🧹 Auto-deleted message ${messageId} in chat ${chatId}`);
+    } catch (err) {
+      // Ignore if already deleted
+      if (!/message to delete not found/i.test(err.message)) {
+        console.error('Auto-delete error:', err.message);
+      }
+    }
+  }, delayMs);
+}
+
+
 function normalizeKeywords(arrOrString) {
   if (!arrOrString) return [];
   const arr = Array.isArray(arrOrString) ? arrOrString : String(arrOrString).split(/[\s,]+/);
@@ -296,9 +311,11 @@ bot.onText(/\/recent/, async (msg) => {
     { text: `${f.file_name} (${f.customId})`, callback_data: `GET:${f.customId}` }
   ]);
 
-  await bot.sendMessage(chatId, '📥 Recent uploads:', {
+  const recentList = await bot.sendMessage(chatId, '📥 Recent uploads:', {
     reply_markup: { inline_keyboard: keyboard }
   });
+  autoDeleteMessage(bot, chatId, recentList.message_id);
+
 });
 
 
@@ -312,9 +329,11 @@ bot.onText(/\/trending/, async (msg) => {
     { text: `${f.file_name} (${f.customId})`, callback_data: `GET:${f.customId}` }
   ]);
 
-  await bot.sendMessage(chatId, '🔥 Trending files:', {
+  const recentList = await bot.sendMessage(chatId, '🔥 Trending files:', {
     reply_markup: { inline_keyboard: keyboard }
   });
+  autoDeleteMessage(bot, chatId, recentList.message_id);
+
 });
 
 
@@ -484,6 +503,13 @@ bot.on('message', async (msg) => {
         message_id: searchingMsg.message_id,
         reply_markup: { inline_keyboard: keyboard }
       });
+
+      // Delete user's original search query after 2 seconds
+      autoDeleteMessage(bot, chatId, msg.message_id, 2000);
+
+      // Auto-delete the search result list after 1 minute
+      // lastListMessage[chatId] = searchingMsg.message_id;
+      autoDeleteMessage(bot, chatId, searchingMsg.message_id);
 
       return;
     }
@@ -692,7 +718,7 @@ bot.on('callback_query', async (q) => {
           sent = await bot.sendMessage(q.message.chat.id, `File: ${fileDoc.file_name}\nID: ${fileDoc.customId}`);
 
         // ⭐ Favorite button
-        await bot.sendMessage(q.message.chat.id, `⭐ Save to favorites?`, {
+        const favMsg = await bot.sendMessage(q.message.chat.id, `⭐ Save to favorites?`, {
           reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
         });
 
@@ -700,6 +726,7 @@ bot.on('callback_query', async (q) => {
         setTimeout(async () => {
           try {
             await bot.deleteMessage(q.message.chat.id, sent.message_id);
+            await bot.deleteMessage(q.message.chat.id, favMsg.message_id);
             console.log(`🗑 Deleted message ${sent.message_id} from chat ${q.message.chat.id}`);
           } catch (err) {
             console.error('Failed to delete file message:', err.message);
@@ -880,9 +907,11 @@ bot.onText(/\/favorites/, async (msg) => {
     { text: `${f.file_name} (${f.customId})`, callback_data: `GET:${f.customId}` }
   ]);
 
-  await bot.sendMessage(chatId, '⭐ Your Favorite Files:', {
+  const recentList = await bot.sendMessage(chatId, '⭐ Your Favorite Files:', {
     reply_markup: { inline_keyboard: keyboard }
   });
+  autoDeleteMessage(bot, chatId, recentList.message_id);
+
 });
 
 /* -------------------------
