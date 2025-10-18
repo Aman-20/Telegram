@@ -343,10 +343,12 @@ bot.onText(/\/myaccount/, async (msg) => {
 
   try {
     const doc = await Limit.findOne({ userId, date: today }).lean().exec();
-    const used = doc?.count || 0;
+    let used = doc?.count || 0;
 
     // Ensure used can't go above the limit
-    if (used > DAILY_LIMIT_NUM) used = DAILY_LIMIT_NUM;
+    if (used > DAILY_LIMIT_NUM) {
+      used = DAILY_LIMIT_NUM;
+    }
 
     const remaining = Math.max(DAILY_LIMIT_NUM - used, 0);
 
