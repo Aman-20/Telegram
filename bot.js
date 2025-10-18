@@ -709,8 +709,12 @@ bot.on('callback_query', async (q) => {
         const caption = `${fileDoc.file_name}\nID: ${fileDoc.customId}\n\n⚠️ This file will be deleted in 1 Minute.`;
         if (fileDoc.type === 'document')
           sent = await bot.sendDocument(q.message.chat.id, fileDoc.file_id, { caption });
+
         else if (fileDoc.type === 'video')
-          sent = await bot.sendVideo(q.message.chat.id, fileDoc.file_id, { caption });
+          sent = await bot.sendVideo(q.message.chat.id, fileDoc.file_id, { caption,
+            reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
+         });
+
         else if (fileDoc.type === 'audio')
           sent = await bot.sendAudio(q.message.chat.id, fileDoc.file_id, { caption });
         else if (fileDoc.type === 'photo')
@@ -719,15 +723,15 @@ bot.on('callback_query', async (q) => {
           sent = await bot.sendMessage(q.message.chat.id, `File: ${fileDoc.file_name}\nID: ${fileDoc.customId}`);
 
         // ⭐ Favorite button
-        const favMsg = await bot.sendMessage(q.message.chat.id, `⭐ Save to favorites?`, {
-          reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
-        });
+        // const favMsg = await bot.sendMessage(q.message.chat.id, `⭐ Save to favorites?`, {
+        //   reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
+        // });
 
-        // ⏳ schedule deletion after 24 hours
+        // ⏳ schedule deletion after 1 Minute
         setTimeout(async () => {
           try {
             await bot.deleteMessage(q.message.chat.id, sent.message_id);
-            await bot.deleteMessage(q.message.chat.id, favMsg.message_id);
+            // await bot.deleteMessage(q.message.chat.id, favMsg.message_id);
             console.log(`🗑 Deleted message ${sent.message_id} from chat ${q.message.chat.id}`);
           } catch (err) {
             console.error('Failed to delete file message:', err.message);
