@@ -43,36 +43,62 @@ You can access the bot here:
 ## 🧭 Quick Start (Local)
 
 ### 1️⃣ Clone the repo
-
 ```bash
 git clone https://github.com/Aman-20/Telegram.git
 cd Telegram
 ```
+
+---
 
 ### 2️⃣ Install dependencies
 ```bash
 npm ci
 ```
 
+---
+
 ### 3️⃣ Create .env file
-
 Create a file named .env and add:
-
 ```bash
 TELEGRAM_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
 MONGODB_URI=YOUR_MONGO_URI
-HOSTING_WEBSITE_URL=https://your-app-url.com
+RENDER_EXTERNAL_URL=https://your-app-url.com
 ADMIN_IDS=123456789
 REQUIRED_CHANNEL=@yourchannel
 ```
 
-### 4️⃣ Start the bot
+## 🔐 Environment Variables
+```bash
+| Variable             | Description                                       |
+|----------------------|---------------------------------------------------|
+| TELEGRAM_TOKEN       | Telegram bot token from BotFather                 |
+| MONGODB_URI          | MongoDB connection string                         |
+| RENDER_EXTERNAL_URL  | Your hosted bot URL (e.g. Render)                 |
+| ADMIN_IDS            | Comma-separated Telegram IDs of admins            |
+| REQUIRED_CHANNEL     | Channel users must join before downloading        |
+```
 
+---
+
+## 📂 Folder Structure
+```bash
+Telegram/
+├── .github/workflows/ # CI configuration
+├── tests/ # Jest test files
+├── views/ # EJS templates
+├── bot.js # Main bot logic
+├── package.json
+├── README.md
+└── LICENSE
+```
+
+---
+
+### 4️⃣ Start the bot
 For development:
 ```bash
 npm run dev
 ```
-
 For production:
 ```bash
 npm start
@@ -80,37 +106,30 @@ npm start
 Visit http://localhost:3000 to see the landing page.
 ```
 
+---
+
 ### 🧪 Run Tests
 ```bash
 npm test
 ```
 
-### 🧹 Linting & Formatting
+---
 
-This project uses ESLint + Prettier.
-```bash
-npm run lint
-npm run format
-```
 ### 🧑‍💻 Contributing
-
-Contributions are welcome!
-
-Fork the repo
-
-Create a new branch (git checkout -b feature/your-feature)
-
-Commit your changes (git commit -m "Add your feature")
-
-Push to the branch (git push origin feature/your-feature)
-
-Create a Pull Request ✅
+- Contributions are welcome!
+- Fork the repo
+- Create a new branch (git checkout -b feature/your-feature)
+- Commit your changes (git commit -m "Add your feature")
+- Push to the branch (git push origin feature/your-feature)
+- Create a Pull Request ✅
+  
+---
 
 ### 📝 License
-
 This project is licensed under the MIT License – see the LICENSE
  file for details.
+ 
+---
 
 ### ⭐ Support
-
 If you like this project, consider giving it a ⭐ on GitHub!
