@@ -365,6 +365,10 @@ bot.onText(/\/myaccount/, async (msg) => {
   } catch (err) {
     console.error('myaccount error', err);
     await bot.sendMessage(chatId, '❌ Failed to fetch account info.');
+    // Try to send a message, but if it fails, don't crash the app.
+    bot.sendMessage(chatId, '❌ Failed to fetch account info.').catch(err => {
+      console.error('Failed to send the error message to user:', err.message);
+    });
   }
 });
 
@@ -711,9 +715,10 @@ bot.on('callback_query', async (q) => {
           sent = await bot.sendDocument(q.message.chat.id, fileDoc.file_id, { caption });
 
         else if (fileDoc.type === 'video')
-          sent = await bot.sendVideo(q.message.chat.id, fileDoc.file_id, { caption,
+          sent = await bot.sendVideo(q.message.chat.id, fileDoc.file_id, {
+            caption,
             reply_markup: { inline_keyboard: [[{ text: '⭐ Favorite', callback_data: `FAV:${fileDoc.customId}` }]] }
-         });
+          });
 
         else if (fileDoc.type === 'audio')
           sent = await bot.sendAudio(q.message.chat.id, fileDoc.file_id, { caption });
