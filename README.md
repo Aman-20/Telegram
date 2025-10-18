@@ -3,6 +3,8 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Node.js CI](https://github.com/Aman-20/Telegram/actions/workflows/ci.yml/badge.svg)
 ![Stars](https://img.shields.io/github/stars/Aman-20/Telegram?style=social)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/Aman-20/Telegram)
+
 
 A simple yet powerful Telegram bot for **searching, uploading, and sharing files** (like movies or documents) with daily user limits, trending, favorites, and inline search features.  
 Built with **Node.js**, **Express**, **MongoDB**, and **node-telegram-bot-api**.
