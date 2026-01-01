@@ -1,11 +1,9 @@
-// bot.mjs
 import dotenv from 'dotenv';
 dotenv.config();
 
 import TelegramBot from 'node-telegram-bot-api';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-
 import express from 'express';
 
 const {
@@ -21,7 +19,6 @@ const {
   RESULTS_PER_PAGE = '6'
 } = process.env;
 
-
 const app = express();
 app.use(express.json());
 
@@ -30,8 +27,10 @@ app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
   res.sendStatus(200);
 });
 
+//ejs
 app.set('view engine', 'ejs');
 
+//website landing page
 app.get('/', (req, res) => {
   res.render('index', {
     botName: 'File Sharing Bot',
@@ -41,15 +40,16 @@ app.get('/', (req, res) => {
   });
 });
 
-
+//listening port 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-
+//bot webhook
 const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
 bot.setWebHook(`${RENDER_EXTERNAL_URL}/bot${TELEGRAM_TOKEN}`);
 
+//if token is not available
 if (!TELEGRAM_TOKEN || !MONGODB_URI) {
   console.error('Missing TELEGRAM_TOKEN or MONGODB_URI in .env');
   process.exit(1);
@@ -59,11 +59,8 @@ const ADMIN_SET = new Set(ADMIN_IDS.split(',').map(s => s.trim()).filter(Boolean
 const DAILY_LIMIT_NUM = Number(DAILY_LIMIT) || 10;
 const RESULTS_PER_PAGE_NUM = Number(RESULTS_PER_PAGE) || 6;
 
-/* -------------------------
-   Mongoose models
-   ------------------------- */
+//Mongoose models
 await mongoose.connect(MONGODB_URI, { dbName: 'TelegramMovies' });
-
 const Schema = mongoose.Schema;
 
 // Collection for files
@@ -80,7 +77,6 @@ const FileSchema = new Schema({
   searches: { type: Number, default: 0 } // aggregate search hits
 });
 FileSchema.index({ file_name: 'text', caption: 'text', keywords: 'text' });
-
 const File = mongoose.model('File', FileSchema);
 
 // Sequence counter for customId
@@ -122,10 +118,8 @@ const PendingSchema = new Schema({
 });
 const Pending = mongoose.model('Pending', PendingSchema);
 
-/* -------------------------
-   Utility helpers
-   ------------------------- */
 
+//Utility helpers
 function autoDeleteMessage(bot, chatId, messageId, delayMs = 60000) {
   setTimeout(async () => {
     try {
@@ -139,7 +133,6 @@ function autoDeleteMessage(bot, chatId, messageId, delayMs = 60000) {
     }
   }, delayMs);
 }
-
 
 function normalizeKeywords(arrOrString) {
   if (!arrOrString) return [];
@@ -179,11 +172,8 @@ async function getUserLimitCount(userId) {
   return doc?.count || 0;
 }
 
-/* -------------------------
-   In-memory maps (short-lived)
-   ------------------------- */
-// store per-user search results (keyed by userId) with TTL removal
-const userSearchResults = new Map(); // userId -> { results: [...], expiresAt: timestamp }
+// store per-user search results in memory maps
+const userSearchResults = new Map();
 
 function setUserSearchResults(userId, results, ttlMs = 5 * 60 * 1000) {
   userSearchResults.set(String(userId), { results, expiresAt: Date.now() + ttlMs });
@@ -194,20 +184,8 @@ function setUserSearchResults(userId, results, ttlMs = 5 * 60 * 1000) {
   }, ttlMs + 1000);
 }
 
-function getUserSearchResults(userId) {
-  const v = userSearchResults.get(String(userId));
-  if (!v || Date.now() >= v.expiresAt) {
-    userSearchResults.delete(String(userId));
-    return null;
-  }
-  return v.results;
-}
-
-/* -------------------------
-   Telegram bot (polling)
-   ------------------------- */
-
-console.log('Bot started (polling mode)');
+//Telegram bot
+console.log('Bot started');
 
 /* Set menu commands */
 bot.setMyCommands([
@@ -220,9 +198,6 @@ bot.setMyCommands([
 
 ]).catch(e => console.warn('setMyCommands failed', e));
 
-/* -------------------------
-   Handlers
-   ------------------------- */
 
 // start
 bot.onText(/\/start/, async (msg) => {
@@ -335,7 +310,7 @@ bot.onText(/\/trending/, async (msg) => {
 
 });
 
-
+//User account
 bot.onText(/\/myaccount/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = String(msg.from.id);
@@ -375,7 +350,7 @@ bot.onText(/\/myaccount/, async (msg) => {
 });
 
 
-/* Handle admin upload: when admin sends a file, create a Pending and ask to confirm */
+//Handle admin upload: when admin sends a file, create a Pending and ask to confirm
 bot.on('message', async (msg) => {
   try {
     const chatId = msg.chat.id;
@@ -524,9 +499,8 @@ bot.on('message', async (msg) => {
   }
 });
 
-/* -------------------------
-   Callback query handling
-   ------------------------- */
+
+//Callback query handling
 bot.on('callback_query', async (q) => {
   try {
     const data = String(q.data || '');
@@ -790,9 +764,8 @@ bot.on('callback_query', async (q) => {
   }
 });
 
-/* -------------------------
-   Inline query (global inline search)
-   ------------------------- */
+
+//Inline query (global inline search)
 bot.on('inline_query', async (iq) => {
   try {
     const q = iq.query?.trim();
@@ -821,11 +794,7 @@ bot.on('inline_query', async (iq) => {
   }
 });
 
-
-/* -------------------------
-   Admin commands: /delete and /update and /broadcast
-   ------------------------- */
-
+//Admin commands: /delete and /update and /broadcast
 bot.onText(/\/delete (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const userId = String(msg.from.id);
@@ -900,9 +869,8 @@ bot.on('callback_query', async (q) => {
   }
 });
 
-/* -------------------------
-   Favorites listing
-   ------------------------- */
+
+//Favorites listing
 bot.onText(/\/favorites/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = String(msg.from.id);
@@ -926,9 +894,8 @@ bot.onText(/\/favorites/, async (msg) => {
 
 });
 
-/* -------------------------
-   Graceful shutdown
-   ------------------------- */
+
+//Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down...');
   try { await mongoose.disconnect(); } catch { }
